@@ -12,15 +12,30 @@ import { FloatingAssistant } from './components/ui/FloatingAssistant';
 import { KeyboardShortcuts } from './components/ui/KeyboardShortcuts';
 import { BadgeNotification } from './components/ui/BadgeNotification';
 import { ToastProvider } from './components/ui/Toast';
+import { TenantProvider, useTenant } from './contexts/TenantContext';
+import { FeatureGate } from './components/FeatureGate';
 import { useStore } from './store/useStore';
 import { cn } from './lib/utils';
 
 const Layout = () => {
   const { sidebarOpen, themeMode, setSearchOpen } = useStore();
+  const { config, isLoading } = useTenant();
   const location = useLocation();
 
   // Detect if user is on Mac or Windows
   const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+
+  // Show loading state while tenant config loads
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-dark-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-centri-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Initialize theme on mount
   useEffect(() => {
@@ -51,7 +66,7 @@ const Layout = () => {
         {/* Header / Top Bar */}
         <header className="h-16 sticky top-0 z-30 bg-white/80 dark:bg-dark-bg/80 backdrop-blur-md border-b border-slate-200 dark:border-dark-border flex items-center justify-between px-8 transition-colors duration-300">
           <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-500 capitalize">
-            <span className="text-slate-600 dark:text-slate-400 font-semibold">CentriWeb</span>
+            <span className="text-slate-600 dark:text-slate-400 font-semibold">{config.branding.companyName}</span>
             {pathSegments.length > 0 && (
               <>
                 <span className="text-slate-400 dark:text-slate-700">/</span>
@@ -100,20 +115,28 @@ const Layout = () => {
       </main>
 
       <CommandMenu />
-      <FloatingAssistant />
       <KeyboardShortcuts />
-      <BadgeNotification />
+
+      {/* EXPERIMENTAL FEATURES - Feature-gated */}
+      <FeatureGate feature="badges">
+        <BadgeNotification />
+      </FeatureGate>
+
+      {/* Floating Assistant - always show but could be feature-gated later */}
+      <FloatingAssistant />
     </div>
   );
 };
 
 const App = () => {
   return (
-    <ToastProvider>
-      <HashRouter>
-        <Layout />
-      </HashRouter>
-    </ToastProvider>
+    <TenantProvider>
+      <ToastProvider>
+        <HashRouter>
+          <Layout />
+        </HashRouter>
+      </ToastProvider>
+    </TenantProvider>
   );
 };
 
