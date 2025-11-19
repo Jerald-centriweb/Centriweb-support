@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import {
+  Home,
   BookOpen,
   MessageSquare,
   LifeBuoy,
@@ -75,6 +76,7 @@ export const Sidebar: React.FC = () => {
           <div className={cn("text-xs font-semibold text-slate-500 dark:text-slate-500 mb-2 px-3 uppercase tracking-wider", !sidebarOpen && "hidden")}>
             Menu
           </div>
+          <NavItem to="/" icon={Home} label="Dashboard" collapsed={!sidebarOpen} />
           <NavItem to="/guides" icon={BookOpen} label="Guides & Tutorials" collapsed={!sidebarOpen} />
           <NavItem to="/chat" icon={MessageSquare} label="AI Assistant" collapsed={!sidebarOpen} />
           <NavItem to="/support" icon={LifeBuoy} label="Submit Ticket" collapsed={!sidebarOpen} />

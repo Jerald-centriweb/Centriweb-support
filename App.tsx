@@ -16,8 +16,11 @@ import { useStore } from './store/useStore';
 import { cn } from './lib/utils';
 
 const Layout = () => {
-  const { sidebarOpen, themeMode } = useStore();
+  const { sidebarOpen, themeMode, setSearchOpen } = useStore();
   const location = useLocation();
+
+  // Detect if user is on Mac or Windows
+  const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
   // Initialize theme on mount
   useEffect(() => {
@@ -60,14 +63,14 @@ const Layout = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Keyboard Shortcut Hint */}
+            {/* Search Button */}
             <button
-              onClick={() => {}}
+              onClick={() => setSearchOpen(true)}
               className="hidden md:flex items-center gap-1 px-2 py-1 rounded-md text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Press ? for keyboard shortcuts"
+              title={`Search guides and actions (${isMac ? '⌘K' : 'Ctrl+K'})`}
             >
               <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-slate-600 dark:text-slate-400">
-                ⌘K
+                {isMac ? '⌘K' : 'Ctrl+K'}
               </kbd>
               <span className="text-slate-400 dark:text-slate-500">Search</span>
             </button>
