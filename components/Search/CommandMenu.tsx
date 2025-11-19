@@ -6,6 +6,7 @@ import Fuse from 'fuse.js';
 import { useStore } from '../../store/useStore';
 import { GUIDE_DATA } from '../../data/guides';
 import { cn } from '../../lib/utils';
+import { analytics, searchPatternDetector } from '../../lib/analytics';
 
 // Quick actions available in command palette
 interface QuickAction {
@@ -131,6 +132,19 @@ export const CommandMenu: React.FC = () => {
 
       setResults(guideResults);
       setSelectedIndex(0);
+
+      // Analytics: Track search (with debounce to avoid spam)
+      const timeoutId = setTimeout(() => {
+        analytics.trackSearch(query, guideResults.length);
+        searchPatternDetector.addSearch(query);
+
+        // Check for confusion signals
+        if (searchPatternDetector.hasRepeatedSearches() || searchPatternDetector.isSearchingRapidly()) {
+          console.warn('[Analytics] Confusion signal detected - user may be stuck');
+        }
+      }, 1000); // 1 second debounce
+
+      return () => clearTimeout(timeoutId);
     }
   }, [query]);
 

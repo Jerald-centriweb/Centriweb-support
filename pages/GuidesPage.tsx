@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, useParams, Link, Navigate } from 'react-router-dom';
 import { GUIDE_DATA } from '../data/guides';
 import { GuideViewer } from '../components/Guide/GuideViewer';
@@ -8,6 +8,8 @@ import * as Icons from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useStore } from '../store/useStore';
 import { PageTransition } from '../components/ui/PageTransition';
+import { useContent } from '../hooks/useContent';
+import { analytics } from '../lib/analytics';
 
 // Component to render dynamic icon by name
 const IconRenderer = ({ name, className }: { name: string; className?: string }) => {
@@ -17,6 +19,28 @@ const IconRenderer = ({ name, className }: { name: string; className?: string })
 
 const CategoryList = () => {
   const { setSearchOpen } = useStore();
+  const { categories, isLoading, useFallback } = useContent();
+
+  // Track page view
+  useEffect(() => {
+    analytics.trackPageView('guides', 'Help Center Guides');
+  }, []);
+
+  // Use dynamic content if available, otherwise fallback to static GUIDE_DATA
+  const guideData = categories.length > 0 ? categories : GUIDE_DATA;
+
+  if (isLoading) {
+    return (
+      <PageTransition className="max-w-5xl mx-auto">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-centri-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-600 dark:text-slate-400">Loading guides...</p>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
 
   return (
     <PageTransition className="max-w-5xl mx-auto">
@@ -35,8 +59,14 @@ const CategoryList = () => {
         </button>
       </div>
 
+      {useFallback && (
+        <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm text-yellow-800 dark:text-yellow-200">
+          ℹ️ Using static content. Connect Supabase to enable dynamic tenant-specific content.
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 gap-6">
-        {GUIDE_DATA.map((area) => (
+        {guideData.map((area) => (
           <Card key={area.id} className="hover:border-centri-500/50 transition-colors group">
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
@@ -75,8 +105,26 @@ const CategoryList = () => {
 
 const GuideDetailWrapper = () => {
   const { areaId, guideId } = useParams();
-  const area = GUIDE_DATA.find(a => a.id === areaId);
+  const { categories, isLoading } = useContent();
+
+  // Use dynamic content if available, otherwise fallback to static GUIDE_DATA
+  const guideData = categories.length > 0 ? categories : GUIDE_DATA;
+
+  const area = guideData.find(a => a.id === areaId);
   const guide = area?.guides.find(g => g.id === guideId);
+
+  if (isLoading) {
+    return (
+      <PageTransition className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-centri-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-600 dark:text-slate-400">Loading guide...</p>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
 
   if (!area || !guide) return <div className="p-8 text-center text-slate-500 dark:text-slate-500">Guide not found.</div>;
 
@@ -113,7 +161,7 @@ const GuideDetailWrapper = () => {
 
       {/* Main Content */}
       <div className="flex-1 min-w-0">
-        <GuideViewer guide={guide} />
+        <GuideViewer guide={guide} category={area.id} />
       </div>
     </PageTransition>
   );

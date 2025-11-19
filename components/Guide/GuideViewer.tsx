@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Guide } from '../../types';
 import { Clock, ThumbsUp, ThumbsDown, ArrowRight, CheckCircle } from 'lucide-react';
@@ -7,21 +7,41 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { RelatedGuides } from './RelatedGuides';
 import { useStore } from '../../store/useStore';
+import { analytics, TimeTracker } from '../../lib/analytics';
 
-export const GuideViewer: React.FC<{ guide: Guide }> = ({ guide }) => {
+export const GuideViewer: React.FC<{ guide: Guide; category?: string }> = ({ guide, category = 'general' }) => {
   const [feedback, setFeedback] = useState<'yes' | 'no' | null>(null);
   const { markGuideAsViewed } = useStore();
   const navigate = useNavigate();
+  const timeTrackerRef = useRef<TimeTracker | null>(null);
 
-  // Mark guide as viewed when component mounts
+  // Mark guide as viewed when component mounts + track analytics
   useEffect(() => {
     markGuideAsViewed(guide.id);
-  }, [guide.id, markGuideAsViewed]);
+
+    // Analytics: Track guide view
+    analytics.trackGuideView(guide.id, category, guide.title);
+
+    // Start time tracking for completion
+    timeTrackerRef.current = new TimeTracker(guide.id);
+
+    // Cleanup: Track completion on unmount if enough time spent
+    return () => {
+      if (timeTrackerRef.current) {
+        timeTrackerRef.current.trackCompletion();
+      }
+    };
+  }, [guide.id, guide.title, category, markGuideAsViewed]);
 
   const handleFeedback = (val: 'yes' | 'no') => {
     setFeedback(val);
-    // Hook for analytics later
-    console.log(`Feedback for guide ${guide.id}: ${val}`);
+
+    // Analytics: Track guide feedback (helpful or not)
+    if (val === 'yes') {
+      analytics.trackAIChatHelpful(guide.id, true, 'Guide was helpful');
+    } else {
+      analytics.trackAIChatHelpful(guide.id, false, 'Guide was not helpful');
+    }
   };
 
   return (
