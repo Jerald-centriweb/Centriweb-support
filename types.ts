@@ -47,6 +47,26 @@ export interface ChatContext {
 // Theme
 export type ThemeMode = 'light' | 'dark';
 
+// User Stats & Badges
+export interface UserStats {
+  guidesRead: number;
+  guidesCompleted: number;
+  daysActive: number;
+  consecutiveDays: number;
+  categoriesExplored: Set<string>;
+  searchesPerformed: number;
+  chatMessagesCount: number;
+  ticketsSubmitted: number;
+  lastActiveDate: string;
+  firstActiveDate: string;
+}
+
+export interface UnlockedBadge {
+  badgeId: string;
+  unlockedAt: string;
+  seen: boolean;
+}
+
 // Global State
 export interface AppState {
   sidebarOpen: boolean;
@@ -58,4 +78,12 @@ export interface AppState {
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
   toggleTheme: () => void;
+
+  // User stats & badges
+  userStats: UserStats;
+  unlockedBadges: UnlockedBadge[];
+  incrementStat: (stat: keyof UserStats, value?: number) => void;
+  addCategoryExplored: (categoryId: string) => void;
+  checkAndUnlockBadges: () => string[]; // Returns newly unlocked badge IDs
+  markBadgeAsSeen: (badgeId: string) => void;
 }
