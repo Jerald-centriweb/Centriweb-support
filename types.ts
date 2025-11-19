@@ -44,6 +44,9 @@ export interface ChatContext {
   userHistory?: string[];
 }
 
+// Theme
+export type ThemeMode = 'light' | 'dark';
+
 // Global State
 export interface AppState {
   sidebarOpen: boolean;
@@ -52,4 +55,7 @@ export interface AppState {
   setSearchOpen: (open: boolean) => void;
   viewedGuides: string[]; // For "Recently Viewed"
   markGuideAsViewed: (id: string) => void;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
+  toggleTheme: () => void;
 }
