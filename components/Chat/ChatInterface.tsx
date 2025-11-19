@@ -5,6 +5,9 @@ import { ChatMessage } from '../../types';
 import { sendMessageToAI } from '../../services/chatService';
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { analytics } from '../../lib/analytics';
+import { VoiceInput } from './VoiceInput';
+import { useFeature } from '../../contexts/TenantContext';
 
 export const ChatInterface: React.FC<{ className?: string }> = ({ className }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -17,8 +20,16 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationId] = useState<string>(() => `conv_${Date.now()}`);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const voiceInputEnabled = useFeature('voiceInput');
+
+  // Track chat session start
+  useEffect(() => {
+    analytics.trackAIChatStart();
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -28,7 +39,7 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
 
   const handleSend = async () => {
     if (!input.trim()) return;
-    
+
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -40,9 +51,15 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
     setInput('');
     setIsTyping(true);
 
+    // Track user message
+    analytics.trackAIChatMessage(input, true);
+
     try {
       const response = await sendMessageToAI([...messages, userMsg]);
       setMessages(prev => [...prev, response]);
+
+      // Track AI response
+      analytics.trackAIChatMessage(response.content, false);
     } catch (error) {
       // Error handling
     } finally {
@@ -51,6 +68,12 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
   };
 
   const handleAction = (action: any) => {
+    // Track suggested action click
+    analytics.trackEvent('ai_chat_action_click', {
+      actionType: action.type,
+      actionLabel: action.label
+    });
+
     if (action.type === 'open_guide') {
        // In a real app, you'd find the areaID too, or handle routing more robustly
        // Here we assume the payload is the guide ID and we rely on global search or known paths
@@ -59,6 +82,16 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
     } else if (action.type === 'navigate') {
        navigate(action.payload);
     }
+  };
+
+  const handleVoiceTranscript = (transcript: string) => {
+    setInput(transcript);
+    setVoiceError(null);
+  };
+
+  const handleVoiceError = (error: string) => {
+    setVoiceError(error);
+    setTimeout(() => setVoiceError(null), 5000); // Clear error after 5 seconds
   };
 
   return (
@@ -126,6 +159,12 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
 
       {/* Input Area */}
       <div className="p-4 border-t border-dark-border bg-dark-card/50 backdrop-blur-md">
+        {voiceError && (
+          <div className="mb-3 p-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-xs text-center">
+            {voiceError}
+          </div>
+        )}
+
         <div className="relative flex items-center gap-2 max-w-4xl mx-auto">
           <input
             type="text"
@@ -133,10 +172,20 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Ask about pipelines, workflows, or account setup..."
-            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 pr-12 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-centri-500 focus:ring-1 focus:ring-centri-500 transition-all shadow-inner"
+            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 pr-24 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-centri-500 focus:ring-1 focus:ring-centri-500 transition-all shadow-inner"
           />
-          <Button 
-            size="sm" 
+
+          {/* Voice Input Button (Feature Gated) */}
+          {voiceInputEnabled && (
+            <VoiceInput
+              onTranscript={handleVoiceTranscript}
+              onError={handleVoiceError}
+              className="absolute right-12 top-1.5 bottom-1.5"
+            />
+          )}
+
+          <Button
+            size="sm"
             className="absolute right-2 top-1.5 bottom-1.5 aspect-square p-0 rounded-lg"
             onClick={handleSend}
             disabled={!input.trim() || isTyping}

@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ChatInterface } from '../components/Chat/ChatInterface';
 import { PageTransition } from '../components/ui/PageTransition';
+import { analytics } from '../lib/analytics';
 
 export const ChatPage = () => {
+  // Track page view
+  useEffect(() => {
+    analytics.trackPageView('chat', 'AI Assistant');
+  }, []);
+
   return (
     <PageTransition className="h-[calc(100vh-4rem)] max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 overflow-hidden">
       <div className="hidden lg:block w-80 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-6 h-full overflow-y-auto">

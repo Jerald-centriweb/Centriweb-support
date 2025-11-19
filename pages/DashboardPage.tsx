@@ -19,6 +19,7 @@ import { BadgeCard } from '../components/ui/BadgeCard';
 import { getBadgeById } from '../data/badges';
 import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
+import { analytics } from '../lib/analytics';
 
 const container = {
   hidden: { opacity: 0 },
@@ -42,6 +43,19 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     checkAndUnlockBadges();
   }, [checkAndUnlockBadges]);
+
+  // Track page view
+  useEffect(() => {
+    analytics.trackPageView('dashboard', 'Dashboard');
+  }, []);
+
+  const handleQuickActionClick = (label: string, path: string) => {
+    analytics.trackEvent('quick_action_click', { action: label, path });
+  };
+
+  const handleGuideClick = (guideId: string, guideTitle: string, section: string) => {
+    analytics.trackEvent('dashboard_guide_click', { guideId, guideTitle, section });
+  };
 
   // Get recently viewed guides
   const recentlyViewed = viewedGuides
@@ -120,6 +134,7 @@ export const DashboardPage: React.FC = () => {
           <Link
             key={action.to}
             to={action.to}
+            onClick={() => handleQuickActionClick(action.label, action.to)}
             className="group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-transparent transition-all duration-300 hover:shadow-xl hover:scale-105"
           >
             <div className={cn(
@@ -193,6 +208,7 @@ export const DashboardPage: React.FC = () => {
                 <Link
                   key={guide.id}
                   to={`/guides/${area.id}/${guide.id}`}
+                  onClick={() => handleGuideClick(guide.id, guide.title, 'recently_viewed')}
                   className="block group"
                 >
                   <Card className="p-4 hover:border-centri-500/50 transition-all hover:shadow-md">
@@ -238,6 +254,7 @@ export const DashboardPage: React.FC = () => {
               <Link
                 key={guide.id}
                 to={`/guides/${area.id}/${guide.id}`}
+                onClick={() => handleGuideClick(guide.id, guide.title, 'popular')}
                 className="block group"
               >
                 <Card className="p-4 hover:border-purple-500/50 transition-all hover:shadow-md">

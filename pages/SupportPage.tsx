@@ -2,10 +2,14 @@ import React, { useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { LifeBuoy, FileText, Zap } from 'lucide-react';
 import { PageTransition } from '../components/ui/PageTransition';
+import { analytics } from '../lib/analytics';
 
 export const SupportPage = () => {
 
   useEffect(() => {
+    // Track page view
+    analytics.trackPageView('support', 'Submit Ticket');
+
     // Load the GHL script dynamically
     const script = document.createElement('script');
     script.src = "https://link.centriweb.com/js/form_embed.js";
