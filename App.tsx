@@ -14,6 +14,7 @@ import { BadgeNotification } from './components/ui/BadgeNotification';
 import { ToastProvider } from './components/ui/Toast';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
 import { FeatureGate } from './components/FeatureGate';
+import { LoginGate } from './components/Auth/LoginGate';
 import { useStore } from './store/useStore';
 import { cn } from './lib/utils';
 
@@ -130,13 +131,15 @@ const Layout = () => {
 
 const App = () => {
   return (
-    <TenantProvider>
-      <ToastProvider>
-        <HashRouter>
-          <Layout />
-        </HashRouter>
-      </ToastProvider>
-    </TenantProvider>
+    <LoginGate>
+      <TenantProvider>
+        <ToastProvider>
+          <HashRouter>
+            <Layout />
+          </HashRouter>
+        </ToastProvider>
+      </TenantProvider>
+    </LoginGate>
   );
 };
 

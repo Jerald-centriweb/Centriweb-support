@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Guide, GuideArea } from '../types';
 import { fetchCategories, fetchAllGuides } from '../services/contentService';
-import { useTenant } from '../contexts/TenantContext';
 import { GUIDE_DATA } from '../data/guides'; // Fallback to static data
 
 /**
- * Hook to fetch and manage content with tenant context
- * Falls back to static GUIDE_DATA if API fails (for development)
+ * Hook to fetch and manage content from the portal API. Falls back to static
+ * GUIDE_DATA only if the API is unreachable (e.g. local dev without the
+ * server running) — the real path is server/index.js -> Postgres `guides`.
  */
 export function useContent() {
-  const { config, context } = useTenant();
   const [categories, setCategories] = useState<GuideArea[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,8 +23,8 @@ export function useContent() {
       try {
         // Try to fetch from API
         const [fetchedCategories, fetchedGuides] = await Promise.all([
-          fetchCategories({ tenantId: context.tenantId }),
-          fetchAllGuides({ tenantId: context.tenantId }),
+          fetchCategories(),
+          fetchAllGuides(),
         ]);
 
         if (fetchedCategories.length === 0 && fetchedGuides.length === 0) {
@@ -49,10 +48,8 @@ export function useContent() {
       }
     }
 
-    if (context.tenantId) {
-      loadContent();
-    }
-  }, [context.tenantId]);
+    loadContent();
+  }, []);
 
   return {
     categories,
