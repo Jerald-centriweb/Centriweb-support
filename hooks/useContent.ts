@@ -1,78 +1,41 @@
 import { useState, useEffect } from 'react';
-import { Guide, GuideArea } from '../types';
-import { fetchCategories, fetchAllGuides } from '../services/contentService';
-import { GUIDE_DATA } from '../data/guides'; // Fallback to static data
+import { Guide, Product } from '../types';
+import { fetchGuides, fetchProducts } from '../services/contentService';
 
 /**
- * Hook to fetch and manage content from the portal API. Falls back to static
- * GUIDE_DATA only if the API is unreachable (e.g. local dev without the
- * server running) — the real path is server/index.js -> Postgres `guides`.
+ * Loads the whole knowledge base once (products + all guides) from the real
+ * portal API. No static fallback data — if the API is unreachable this
+ * surfaces as a genuine error state, which is the honest thing to show
+ * rather than quietly rendering stale placeholder content.
  */
 export function useContent() {
-  const [categories, setCategories] = useState<GuideArea[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [useFallback, setUseFallback] = useState(false);
 
   useEffect(() => {
-    async function loadContent() {
+    let cancelled = false;
+    async function load() {
       setIsLoading(true);
       setError(null);
-
       try {
-        // Try to fetch from API
-        const [fetchedCategories, fetchedGuides] = await Promise.all([
-          fetchCategories(),
-          fetchAllGuides(),
-        ]);
-
-        if (fetchedCategories.length === 0 && fetchedGuides.length === 0) {
-          // No content from API - use static fallback
-          console.warn('[useContent] No content from API, using static fallback');
-          setCategories(GUIDE_DATA);
-          setUseFallback(true);
-        } else {
-          setCategories(fetchedCategories);
-          setGuides(fetchedGuides);
-          setUseFallback(false);
-        }
+        const [productRows, guideRows] = await Promise.all([fetchProducts(), fetchGuides()]);
+        if (cancelled) return;
+        setProducts(productRows);
+        setGuides(guideRows);
       } catch (err) {
         console.error('[useContent] Error loading content:', err);
-        setError('Failed to load content');
-        // Use static fallback on error
-        setCategories(GUIDE_DATA);
-        setUseFallback(true);
+        if (!cancelled) setError('Could not load the help centre right now.');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
-
-    loadContent();
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  return {
-    categories,
-    guides,
-    isLoading,
-    error,
-    useFallback,
-  };
-}
-
-/**
- * Hook to fetch a single guide by ID
- */
-export function useGuide(guideId: string) {
-  const { guides, isLoading } = useContent();
-  const [guide, setGuide] = useState<Guide | null>(null);
-
-  useEffect(() => {
-    if (!isLoading && guides.length > 0) {
-      const found = guides.find((g) => g.id === guideId);
-      setGuide(found || null);
-    }
-  }, [guideId, guides, isLoading]);
-
-  return { guide, isLoading };
+  return { products, guides, isLoading, error };
 }

@@ -11,7 +11,7 @@ export const FloatingAssistant: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: '👋 Hi! I\'m your AI assistant. Ask me anything about GoHighLevel!',
+      content: "Hi! I'm your PreBuild assistant. Ask me anything about your dashboard.",
       timestamp: Date.now(),
     },
   ]);

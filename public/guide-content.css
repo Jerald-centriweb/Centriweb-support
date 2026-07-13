@@ -1,0 +1,107 @@
+/*
+ * Styling for migrated guide HTML content (server/migrate-content.mjs pulled
+ * these guides in as raw HTML with the original support-centre's class names:
+ * .lede-lg, .steps/.step, .note, .auto, .tablewrap/table, .chip, .tag-you/
+ * .tag-auto, .step-link). Rather than reinvent guide typography, this is the
+ * original /opt/support-centre/style.css content rules, scoped under
+ * .guide-content so they can't leak into the rest of the app shell, with the
+ * same CentriWeb blue (#4a9fe0) that is now also the app's --primary-500.
+ */
+.guide-content {
+  --gc-paper: #fbfcfd;
+  --gc-card: #ffffff;
+  --gc-ink: #152230;
+  --gc-mut: #5a6b7d;
+  --gc-soft: #8b9aab;
+  --gc-line: #e4eaf0;
+  --gc-line2: #d3dde6;
+  --gc-blue: #4a9fe0;
+  --gc-blue-d: #2570a8;
+  --gc-blue-wash: #eaf3fb;
+  --gc-blue-edge: #c9e0f3;
+  --gc-ok: #1f9d4d;
+  --gc-ok-wash: #e9f7ee;
+  --gc-shadow-sm: 0 1px 2px rgba(21, 34, 48, 0.05);
+  --gc-shadow-md: 0 10px 30px rgba(21, 34, 48, 0.09);
+  color: var(--gc-ink);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.dark .guide-content {
+  --gc-paper: #0e1420;
+  --gc-card: #141b28;
+  --gc-ink: #e9eef4;
+  --gc-mut: #93a2b4;
+  --gc-soft: #657185;
+  --gc-line: #232d3d;
+  --gc-line2: #2c3849;
+  --gc-blue: #5aa8e8;
+  --gc-blue-d: #8cc4f2;
+  --gc-blue-wash: #182a3c;
+  --gc-blue-edge: #26425a;
+  --gc-ok: #3ec97e;
+  --gc-ok-wash: #132a1f;
+  --gc-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --gc-shadow-md: 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+.guide-content .lede-lg { font-size: 16.5px; line-height: 1.65; color: var(--gc-mut); margin: 0 0 6px; max-width: 64ch; }
+.guide-content p { max-width: 66ch; margin: 0 0 14px; }
+.guide-content h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin: 36px 0 14px; color: var(--gc-ink); }
+.guide-content h3 { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 6px; color: var(--gc-ink); }
+
+.guide-content .tag-you, .guide-content .tag-auto {
+  display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 99px; margin-left: 8px; vertical-align: middle;
+}
+.guide-content .tag-you { color: var(--gc-blue-d); background: var(--gc-blue-wash); border: 1px solid var(--gc-blue-edge); }
+.guide-content .tag-auto { color: var(--gc-ok); background: var(--gc-ok-wash); border: 1px solid var(--gc-blue-edge); }
+.guide-content .step-link { display: block; margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--gc-blue); text-decoration: none; }
+.guide-content .step-link:hover { color: var(--gc-blue-d); }
+
+.guide-content .steps { position: relative; margin: 18px 0 8px; }
+.guide-content .steps::before {
+  content: ''; position: absolute; left: 21px; top: 16px; bottom: 16px; width: 2px;
+  background: linear-gradient(180deg, var(--gc-blue-edge), var(--gc-line));
+}
+.guide-content .step { position: relative; display: flex; gap: 18px; padding: 14px 0; }
+.guide-content .step .n {
+  flex: none; z-index: 1; width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, #5aacea, #2f6fb0); color: #fff; font-weight: 800; font-size: 18px;
+  display: grid; place-items: center; box-shadow: 0 3px 10px rgba(74, 159, 224, 0.32), 0 0 0 4px var(--gc-paper);
+}
+.guide-content .step .b { background: var(--gc-card); border: 1px solid var(--gc-line); border-radius: 14px; padding: 15px 19px; flex: 1; box-shadow: var(--gc-shadow-sm); }
+.guide-content .step p { margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--gc-mut); }
+.guide-content .step p b, .guide-content .note b, .guide-content td b { color: var(--gc-ink); }
+
+.guide-content .note {
+  background: var(--gc-blue-wash); border: 1px solid var(--gc-blue-edge); border-left: 4px solid var(--gc-blue);
+  border-radius: 12px; padding: 15px 19px; font-size: 15.5px; line-height: 1.6; margin: 22px 0;
+}
+.guide-content .note.good { background: var(--gc-ok-wash); border-left-color: var(--gc-ok); }
+.guide-content .auto {
+  display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 800; color: var(--gc-ok);
+  text-transform: uppercase; letter-spacing: 0.08em; margin: 34px 0 6px;
+}
+.guide-content .auto::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--gc-ok); box-shadow: 0 0 0 4px var(--gc-ok-wash); }
+
+.guide-content .tablewrap { overflow-x: auto; border: 1px solid var(--gc-line); border-radius: 14px; margin: 18px 0; box-shadow: var(--gc-shadow-sm); }
+.guide-content table { border-collapse: collapse; width: 100%; font-size: 15px; background: var(--gc-card); }
+.guide-content th {
+  text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--gc-soft);
+  padding: 11px 16px; border-bottom: 1px solid var(--gc-line); font-weight: 700;
+}
+.guide-content td { padding: 12px 16px; border-bottom: 1px solid var(--gc-line); vertical-align: top; line-height: 1.55; }
+.guide-content tr:last-child td { border-bottom: 0; }
+
+.guide-content .chip {
+  font-size: 12.5px; font-weight: 700; color: var(--gc-blue-d); background: var(--gc-blue-wash);
+  border: 1px solid var(--gc-blue-edge); border-radius: 99px; padding: 4px 12px;
+}
+
+.guide-content img {
+  max-width: 100%; border: 1px solid var(--gc-line2); border-radius: 12px; box-shadow: var(--gc-shadow-md);
+  margin: 14px 0 4px; display: block;
+}
+.guide-content img + em, .guide-content figcaption { display: block; font-size: 13.5px; color: var(--gc-soft); font-style: normal; margin: 6px 0 18px; }

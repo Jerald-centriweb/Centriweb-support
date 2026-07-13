@@ -1,9 +1,13 @@
 /**
- * Identity for the portal. Two ways in, both converging on the same JWT:
- *  1. Login form (email + password) for a client opening the portal directly.
- *  2. Embed token: Jerald's GHL custom-menu-link carries ?token=<jwt> so the
- *     iframe on app.centriweb.com opens straight into the right account with
- *     no shared password. We capture it once and keep it in localStorage.
+ * Identity for the portal has exactly two paths:
+ *  1. EMBED — the only client path. The GHL custom-menu-link carries
+ *     ?token=<jwt> (signed by us at onboarding time, see
+ *     server/provision-account.mjs) so the iframe opens straight into the
+ *     right account. We capture it once and keep it in localStorage; there
+ *     is no client-facing login form anywhere in this app.
+ *  2. INTERNAL — a separate admin-only login (see internalLogin below),
+ *     reachable only at #/internal-login, for Jerald/us to preview the
+ *     portal without an embed link. Never surfaced in client navigation.
  *
  * There is no server-side session/cookie — every API call attaches
  * `Authorization: Bearer <token>` explicitly, which also sidesteps iframe
@@ -12,15 +16,17 @@
 
 const TOKEN_KEY = 'pb_portal_token';
 
-export function captureEmbedTokenFromUrl(): void {
+export function captureEmbedTokenFromUrl(): boolean {
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
   if (token) {
     localStorage.setItem(TOKEN_KEY, token);
     params.delete('token');
     const rest = params.toString();
-    window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : ''));
+    window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : '') + window.location.hash);
+    return true;
   }
+  return false;
 }
 
 export function getToken(): string | null {
@@ -35,8 +41,9 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-export async function login(email: string, password: string): Promise<boolean> {
-  const res = await fetch('/api/auth/login', {
+/** Internal admin login only — never called from client-facing UI. */
+export async function internalLogin(email: string, password: string): Promise<boolean> {
+  const res = await fetch('/api/internal/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),

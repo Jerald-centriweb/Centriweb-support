@@ -7,7 +7,6 @@ import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { analytics } from '../../lib/analytics';
 import { VoiceInput } from './VoiceInput';
-import { useFeature } from '../../contexts/TenantContext';
 
 export const ChatInterface: React.FC<{ className?: string }> = ({ className }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -24,7 +23,7 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const voiceInputEnabled = useFeature('voiceInput');
+  const voiceInputEnabled = true;
 
   // Track chat session start
   useEffect(() => {
@@ -95,7 +94,7 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
   };
 
   return (
-    <div className={cn("flex flex-col h-full bg-dark-bg", className)}>
+    <div className={cn("flex flex-col h-full bg-white dark:bg-dark-bg", className)}>
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6" ref={scrollRef}>
         {messages.map((msg) => (
@@ -108,16 +107,16 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
           >
             <div className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
-              msg.role === 'assistant' ? "bg-centri-600 text-white" : "bg-slate-700 text-slate-300"
+              msg.role === 'assistant' ? "bg-centri-600 text-white" : "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
             )}>
               {msg.role === 'assistant' ? <Bot size={18} /> : <User size={18} />}
             </div>
-            
+
             <div className="flex flex-col gap-2">
               <div className={cn(
                 "p-4 rounded-2xl shadow-sm leading-relaxed text-sm",
-                msg.role === 'assistant' 
-                  ? "bg-dark-card border border-dark-border text-slate-200 rounded-tl-none" 
+                msg.role === 'assistant'
+                  ? "bg-slate-100 dark:bg-dark-card border border-slate-200 dark:border-dark-border text-slate-800 dark:text-slate-200 rounded-tl-none"
                   : "bg-centri-600 text-white rounded-tr-none"
               )}>
                 {msg.content}
@@ -148,17 +147,17 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
             <div className="w-8 h-8 rounded-full bg-centri-600 text-white flex items-center justify-center flex-shrink-0">
               <Bot size={18} />
             </div>
-            <div className="bg-dark-card border border-dark-border p-4 rounded-2xl rounded-tl-none flex items-center gap-1">
-              <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="bg-slate-100 dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 rounded-2xl rounded-tl-none flex items-center gap-1">
+              <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         )}
       </div>
 
       {/* Input Area */}
-      <div className="p-4 border-t border-dark-border bg-dark-card/50 backdrop-blur-md">
+      <div className="p-4 border-t border-slate-200 dark:border-dark-border bg-slate-50/50 dark:bg-dark-card/50 backdrop-blur-md">
         {voiceError && (
           <div className="mb-3 p-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-xs text-center">
             {voiceError}
@@ -172,7 +171,7 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Ask about pipelines, workflows, or account setup..."
-            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 pr-24 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-centri-500 focus:ring-1 focus:ring-centri-500 transition-all shadow-inner"
+            className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 pr-24 text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-centri-500 focus:ring-1 focus:ring-centri-500 transition-all shadow-inner"
           />
 
           {/* Voice Input Button (Feature Gated) */}

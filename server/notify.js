@@ -3,10 +3,14 @@
  * (127.0.0.1:8484), which is the same inbox Jerald's Claude sessions and the
  * brain app read from. See /opt/centri-agents/app.py push_inbox()/@app.post("/inbox").
  */
-export async function notifyJerald(account, ticket) {
+export async function notifyJerald(account, ticket, clickupLine) {
   const url = process.env.AGENT_INBOX_URL;
   const token = process.env.AGENT_TOKEN;
-  const text = `[Support Portal] New ticket from ${account.company_name} (${account.slug}): "${ticket.subject}" — ${ticket.body.slice(0, 300)}`;
+  const lines = [
+    `[Support Portal] New ticket from ${account.company_name} (${account.slug}): "${ticket.subject}" - ${ticket.body.slice(0, 300)}`,
+  ];
+  if (clickupLine) lines.push(clickupLine);
+  const text = lines.join('\n');
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-agent-token': token },

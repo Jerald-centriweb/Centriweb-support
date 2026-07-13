@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CentriWeb Support OS</title>
+    <title>PreBuild Help Centre</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -14,83 +14,106 @@
               sans: ['Inter', 'sans-serif'],
             },
             colors: {
+              // Brand colour mapped to CSS variables so a future per-account
+              // theme only ever has to override the variables below, not the
+              // Tailwind config or any component class names.
               centri: {
-                50: '#f0f9ff',
-                100: '#e0f2fe',
-                200: '#bae6fd',
-                300: '#7dd3fc',
-                400: '#38bdf8',
-                500: '#0ea5e9',
-                600: '#0284c7',
-                700: '#0369a1', // Primary Brand Color
-                800: '#075985',
-                900: '#0c4a6e',
-                950: '#082f49', // Dark Background
+                50: 'rgb(var(--primary-50) / <alpha-value>)',
+                100: 'rgb(var(--primary-100) / <alpha-value>)',
+                200: 'rgb(var(--primary-200) / <alpha-value>)',
+                300: 'rgb(var(--primary-300) / <alpha-value>)',
+                400: 'rgb(var(--primary-400) / <alpha-value>)',
+                500: 'rgb(var(--primary-500) / <alpha-value>)',
+                600: 'rgb(var(--primary-600) / <alpha-value>)',
+                700: 'rgb(var(--primary-700) / <alpha-value>)',
+                800: 'rgb(var(--primary-800) / <alpha-value>)',
+                900: 'rgb(var(--primary-900) / <alpha-value>)',
+                950: 'rgb(var(--primary-950) / <alpha-value>)',
               },
               dark: {
-                bg: '#0f172a',
-                card: '#1e293b',
-                border: '#334155',
-              }
+                bg: '#050b14',
+                card: '#0f172a',
+                border: '#1e293b',
+              },
+            },
+            letterSpacing: {
+              tighter: '-0.04em',
+              tight: '-0.02em',
             },
             animation: {
-              'fade-in': 'fadeIn 0.3s ease-out',
-              'slide-up': 'slideUp 0.4s ease-out',
+              'fade-in': 'fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+              'slide-up': 'slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             },
             keyframes: {
               fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
+                '0%': { opacity: '0', filter: 'blur(4px)' },
+                '100%': { opacity: '1', filter: 'blur(0)' },
               },
               slideUp: {
-                '0%': { transform: 'translateY(10px)', opacity: '0' },
+                '0%': { transform: 'translateY(20px)', opacity: '0' },
                 '100%': { transform: 'translateY(0)', opacity: '1' },
-              }
-            }
+              },
+            },
           },
         },
-      }
+      };
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-      /* Custom Scrollbar for premium feel */
+      /* CentriWeb brand blue (#4a9fe0) as an 11-step ramp. Any account-specific
+         theme later only has to override these variables. */
+      :root {
+        --primary-50: 242 248 253;
+        --primary-100: 224 239 250;
+        --primary-200: 194 223 245;
+        --primary-300: 150 200 237;
+        --primary-400: 107 177 230;
+        --primary-500: 74 159 224; /* #4a9fe0 */
+        --primary-600: 36 137 214;
+        --primary-700: 30 114 179;
+        --primary-800: 24 92 144;
+        --primary-900: 19 73 113;
+        --primary-950: 13 50 78;
+      }
+
       ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 4px;
+        height: 4px;
       }
       ::-webkit-scrollbar-track {
-        background: #0f172a; 
+        background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: #334155; 
-        border-radius: 4px;
+        background: #334155;
+        border-radius: 3px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #475569; 
+        background: #475569;
+      }
+
+      /* Ambient background layer used on light backgrounds behind the content */
+      .aurora-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-image: radial-gradient(at 10% 0%, rgba(var(--primary-500), 0.06) 0px, transparent 60%),
+          radial-gradient(at 90% 0%, rgba(var(--primary-600), 0.05) 0px, transparent 60%),
+          radial-gradient(at 50% 100%, rgba(var(--primary-500), 0.03) 0px, transparent 50%);
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      body {
+        font-feature-settings: 'ss01', 'ss02', 'cv01', 'cv02';
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "clsx": "https://aistudiocdn.com/clsx@^2.1.1",
-    "tailwind-merge": "https://aistudiocdn.com/tailwind-merge@^3.4.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-markdown": "https://aistudiocdn.com/react-markdown@^10.1.0",
-    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "zustand/": "https://aistudiocdn.com/zustand@^5.0.8/",
-    "zustand": "https://aistudiocdn.com/zustand@^5.0.8",
-    "fuse.js": "https://aistudiocdn.com/fuse.js@^7.1.0"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
-  <body class="bg-dark-bg text-slate-200 font-sans antialiased selection:bg-centri-500 selection:text-white">
+    <link rel="stylesheet" href="/guide-content.css" />
+  </head>
+  <body class="bg-dark-bg text-slate-200 font-sans antialiased selection:bg-centri-500 selection:text-white overflow-x-hidden">
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>

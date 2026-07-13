@@ -6,7 +6,7 @@
  * match and cites the guide. If nothing matched, it refuses and offers a
  * ticket instead of guessing.
  */
-import { withAccount } from './db.js';
+import pool from './db.js';
 
 function stripHtml(html) {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -36,34 +36,31 @@ function wordOverlapCount(words, hay) {
   return words.filter((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(hay)).length;
 }
 
-// searchGuides runs through withAccount() — guides are RLS-gated to "any
-// logged-in session" (see guides_read policy), so a plain pool.query() with
-// no app.account_id set would silently return zero rows every time, not an
-// error, which is exactly the kind of bug that could masquerade as "grounded
-// answers just don't exist" instead of what it actually was: the connection
-// never proved it had a session.
-async function searchGuides(accountId, query) {
-  return withAccount(accountId, async (c) => {
-    const { rows: allGuides } = await c.query(
-      'SELECT slug, title, summary, content, content_format FROM guides ORDER BY order_index'
-    );
+// Guides are public content (RLS policy `guides_read USING (true)`, see
+// migrations/002) so this is a plain query — no account/session context
+// needed to read them, same as the /api/guides endpoint.
+async function searchGuides(query) {
+  // status = 'live' only — the grounded chat must never cite a draft guide
+  // (e.g. unreviewed Notion-sourced content) as if it were checked and true.
+  const { rows: allGuides } = await pool.query(
+    `SELECT slug, title, summary, content, content_format FROM guides WHERE status = 'live' ORDER BY order_index`
+  );
 
-    const words = meaningfulWords(query);
-    if (words.length === 0) return [];
+  const words = meaningfulWords(query);
+  if (words.length === 0) return [];
 
-    const scored = allGuides
-      .map((g) => {
-        const hay = `${g.title} ${g.summary} ${stripHtml(g.content)}`.toLowerCase();
-        const matches = wordOverlapCount(words, hay);
-        return { g, matches };
-      })
-      // Require at least 2 distinct meaningful words to overlap (or all of
-      // them for a short question) — one incidental match isn't a real hit.
-      .filter(({ matches }) => matches >= Math.min(2, words.length))
-      .sort((a, b) => b.matches - a.matches);
+  const scored = allGuides
+    .map((g) => {
+      const hay = `${g.title} ${g.summary} ${stripHtml(g.content)}`.toLowerCase();
+      const matches = wordOverlapCount(words, hay);
+      return { g, matches };
+    })
+    // Require at least 2 distinct meaningful words to overlap (or all of
+    // them for a short question) — one incidental match isn't a real hit.
+    .filter(({ matches }) => matches >= Math.min(2, words.length))
+    .sort((a, b) => b.matches - a.matches);
 
-    return scored.slice(0, 3).map(({ g }) => g);
-  });
+  return scored.slice(0, 3).map(({ g }) => g);
 }
 
 // Agency Brain's /api/search is a broad semantic/keyword search over the
@@ -103,8 +100,8 @@ async function searchBrain(query) {
   }
 }
 
-export async function answerQuestion(accountId, question) {
-  const [guideHits, brainHits] = await Promise.all([searchGuides(accountId, question), searchBrain(question)]);
+export async function answerQuestion(question) {
+  const [guideHits, brainHits] = await Promise.all([searchGuides(question), searchBrain(question)]);
 
   if (guideHits.length === 0 && brainHits.length === 0) {
     return {
