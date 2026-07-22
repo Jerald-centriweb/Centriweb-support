@@ -32,8 +32,44 @@ function meaningfulWords(text) {
   );
 }
 
-function wordOverlapCount(words, hay) {
-  return words.filter((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(hay)).length;
+function wordOverlapWords(words, hay) {
+  return words.filter((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(hay));
+}
+
+// ---------------------------------------------------------------------------
+// Relevance gate. The count-only version of this (matches >= min(2, words))
+// let two SHORT, coincidentally-overlapping words pass as "grounded" — e.g.
+// "mango sticky rice recipe" (4 meaningful words) matched an unrelated fried-
+// rice-restaurant fact purely because that fact happened to also contain the
+// words "rice" and "recipe" (2 of 4 = the old bar), even though the fact has
+// nothing to do with the actual question. Validated against the live brain:
+// this genuinely fabricated an answer instead of refusing.
+//
+// Fix: a hit must clear BOTH of:
+//   1. COUNT  — at least min(2, words.length) distinct meaningful words present
+//      verbatim (unchanged floor — still lets a single-meaningful-word
+//      question like "how does a lead get in" match on "lead" alone).
+//   2. WEIGHT — those matched words must account for a MAJORITY (>=60%) of the
+//      query's total meaningful content, measured by character length rather
+//      than word count. This is a cheap stand-in for "was this a genuine,
+//      substantial overlap or two short/common words colliding by luck" — the
+//      longer/rarer a word, the more it has to count for. "rice" + "recipe"
+//      (4+6=10 of the query's 21 meaningful characters, 48%) no longer clears
+//      the bar; "send" + "invoice" (both of a 2-word query, 100%) still does.
+// Both gates must pass — WEIGHT alone would let one long, rare, but still
+// accidental word match (e.g. one hit among two 8+ letter words) sneak
+// through, and COUNT alone is exactly the bug above.
+const RELEVANCE_WEIGHT_RATIO = 0.6;
+
+function matchStrength(words, hay) {
+  if (words.length === 0) return { ok: false, matched: [] };
+  const matched = wordOverlapWords(words, hay);
+  const countFloor = Math.min(2, words.length);
+  if (matched.length < countFloor) return { ok: false, matched };
+  const totalWeight = words.reduce((sum, w) => sum + w.length, 0);
+  const matchedWeight = matched.reduce((sum, w) => sum + w.length, 0);
+  const ratio = totalWeight > 0 ? matchedWeight / totalWeight : 0;
+  return { ok: ratio >= RELEVANCE_WEIGHT_RATIO, matched, ratio };
 }
 
 // Guides are public content (RLS policy `guides_read USING (true)`, see
@@ -52,13 +88,13 @@ async function searchGuides(query) {
   const scored = allGuides
     .map((g) => {
       const hay = `${g.title} ${g.summary} ${stripHtml(g.content)}`.toLowerCase();
-      const matches = wordOverlapCount(words, hay);
-      return { g, matches };
+      const strength = matchStrength(words, hay);
+      return { g, strength };
     })
-    // Require at least 2 distinct meaningful words to overlap (or all of
-    // them for a short question) — one incidental match isn't a real hit.
-    .filter(({ matches }) => matches >= Math.min(2, words.length))
-    .sort((a, b) => b.matches - a.matches);
+    // See matchStrength() above — count AND weighted-overlap must both pass;
+    // an incidental word or two isn't a real hit.
+    .filter(({ strength }) => strength.ok)
+    .sort((a, b) => b.strength.matched.length - a.strength.matched.length);
 
   return scored.slice(0, 3).map(({ g }) => g);
 }
@@ -69,16 +105,15 @@ async function searchGuides(query) {
 // match — it has no relevance cutoff of its own. Taking any hit at face value
 // would defeat "refuse to fabricate" (tested against an absurd, unrelated
 // question during build: it happily returned a "dog training funnel ROAS"
-// fact). So we require actual lexical overlap between the query and the hit
-// before treating it as grounding — not just "the brain returned something".
+// fact, and separately "mango sticky rice recipe" got grounded on an
+// unrelated fried-rice-restaurant fact via two short, coincidentally
+// overlapping words). So we require actual, substantial lexical overlap
+// between the query and the hit before treating it as grounding — see
+// matchStrength() above for the count+weight gate this applies.
 function isRelevant(query, hitText) {
   const words = meaningfulWords(query);
   if (words.length === 0) return false;
-  const matches = wordOverlapCount(words, hitText.toLowerCase());
-  // Require at least 2 distinct meaningful words to overlap (or all of them,
-  // for very short questions) — a single incidental word match (e.g. "dog")
-  // is not enough to call something grounded.
-  return matches >= Math.min(2, words.length);
+  return matchStrength(words, hitText.toLowerCase()).ok;
 }
 
 async function searchBrain(query) {
@@ -91,6 +126,15 @@ async function searchBrain(query) {
     // on version — normalise defensively rather than assume a shape.
     const hits = Array.isArray(data) ? data : data.results || [];
     return hits.filter((h) => {
+      if (typeof h !== 'string') {
+        // Defence in depth: if the brain itself attached a numeric relevance
+        // score to this hit (episode/passage search does; fact search may
+        // not), a score at or below zero means the brain's OWN ranking
+        // considers it a non-match — never treat that as grounding no matter
+        // what the lexical check below says. Absent/non-numeric score is not
+        // penalised; the lexical gate is the primary check in that case.
+        if (typeof h.score === 'number' && h.score <= 0) return false;
+      }
       const text = typeof h === 'string' ? h : h.content || h.fact || h.text || h.summary || '';
       return isRelevant(query, text);
     });

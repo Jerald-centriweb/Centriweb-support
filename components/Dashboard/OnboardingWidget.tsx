@@ -4,6 +4,7 @@ import { Trophy, ArrowRight } from 'lucide-react';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Button } from '../ui/Button';
 import { SpotlightCard } from '../ui/SpotlightCard';
+import { Skeleton } from '../ui/Skeleton';
 import { useStore } from '../../store/useStore';
 import { useContent } from '../../hooks/useContent';
 
@@ -18,13 +19,32 @@ export const OnboardingWidget: React.FC = () => {
   const { viewedGuides } = useStore();
   const { guides, isLoading } = useContent();
 
+  // Loading gets a skeleton in the widget's real shape rather than nothing —
+  // returning null while data loads, then popping the whole card in once it
+  // arrives, is exactly the layout jump the rest of the app is being fixed
+  // to avoid.
+  if (isLoading) {
+    return (
+      <div className="mb-10 rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-dark-card p-6 md:p-8 flex flex-col md:flex-row gap-8 items-start md:items-center">
+        <Skeleton className="w-20 h-20 rounded-full flex-shrink-0" />
+        <div className="flex-1 space-y-3 w-full">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-full max-w-md" />
+          <Skeleton className="h-2 w-full max-w-md rounded-full" />
+        </div>
+        <Skeleton className="w-full md:w-[260px] h-28 rounded-xl flex-shrink-0" />
+      </div>
+    );
+  }
+
   const startHere = guides.filter((g) => g.section === 'start_here');
-  if (isLoading || startHere.length === 0) return null;
+  if (startHere.length === 0) return null;
 
   const completedCount = startHere.filter((g) => viewedGuides.includes(g.id)).length;
   const total = startHere.length;
   const progress = (completedCount / total) * 100;
   const nextGuide = startHere.find((g) => !viewedGuides.includes(g.id));
+  const guideNoun = total === 1 ? 'guide' : 'guides';
 
   return (
     <div className="mb-10">
@@ -44,13 +64,13 @@ export const OnboardingWidget: React.FC = () => {
 
           <div className="flex-1 space-y-3">
             <div>
-              <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white tracking-tight">
                 {progress === 100 ? "You're set up" : 'Your first week'}
               </h2>
               <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base max-w-xl">
                 {progress === 100
                   ? 'You have been through every Start Here guide. Day-to-day guides are there whenever you need them.'
-                  : 'Six short guides, in order. Do the ones marked "you" and the rest looks after itself.'}
+                  : `${total} short ${guideNoun}, in order. Do the ones marked "you" and the rest looks after itself.`}
               </p>
             </div>
             <div className="flex items-center gap-4 max-w-md">

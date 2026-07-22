@@ -2,7 +2,13 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 
 export const Card: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, children, ...props }) => (
-  <div className={cn('bg-dark-card border border-dark-border rounded-xl shadow-sm overflow-hidden', className)} {...props}>
+  <div
+    className={cn(
+      'bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden',
+      className
+    )}
+    {...props}
+  >
     {children}
   </div>
 );

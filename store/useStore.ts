@@ -13,8 +13,6 @@ const getInitialTheme = (): ThemeMode => {
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
-      sidebarOpen: true,
-      toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       mobileMenuOpen: false,
       toggleMobileMenu: () => set((state) => ({ mobileMenuOpen: !state.mobileMenuOpen })),
       searchOpen: false,

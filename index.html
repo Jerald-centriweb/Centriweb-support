@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PreBuild Help Centre</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -90,6 +91,29 @@
       }
       ::-webkit-scrollbar-thumb:hover {
         background: #475569;
+      }
+
+      /* One consistent keyboard-focus treatment for every interactive
+         element in the app (native buttons/links/inputs, and anything made
+         focusable via tabIndex, e.g. clickable cards) — mouse users never
+         see it (:focus-visible), keyboard users always do. Outline paints
+         outside the border box and is unaffected by a parent's own
+         overflow-hidden, so this is safe even on rounded, clipped cards. */
+      :focus-visible {
+        outline: 2px solid rgb(var(--primary-500));
+        outline-offset: 2px;
+      }
+
+      /* Respect the OS-level reduced-motion preference for plain CSS/Tailwind
+         keyframe animation (fade-in, slide-up, pulse, bounce, ping) — loading
+         spinners are exempted since freezing them reads as "stuck", not calm. */
+      @media (prefers-reduced-motion: reduce) {
+        *:not(.animate-spin, .animate-spin *) {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+          scroll-behavior: auto !important;
+        }
       }
 
       /* Ambient background layer used on light backgrounds behind the content */

@@ -11,7 +11,7 @@ export const ChatPage = () => {
   }, []);
 
   return (
-    <PageTransition className="h-[calc(100vh-4rem)] max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 overflow-hidden">
+    <PageTransition className="h-[calc(100vh-4rem)] lg:h-[calc(100vh-7rem)] max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 overflow-hidden">
       <div className="hidden lg:block w-80 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl p-6 h-full overflow-y-auto">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">PreBuild Assistant</h2>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-8">

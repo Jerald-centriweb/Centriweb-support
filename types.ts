@@ -5,8 +5,14 @@ export type NavItem = 'guides' | 'chat' | 'support';
 // A second product is added purely by inserting a `products` row and tagging
 // guides with its slug — nothing in the nav or routing is hardcoded to
 // "prebuild" beyond the default selection.
-export type GuideSection = 'start_here' | 'day_to_day' | 'troubleshooting';
+export type GuideSection = 'start_here' | 'day_to_day' | 'money_and_documents' | 'troubleshooting';
 export type GuideContentType = 'article' | 'video' | 'mixed';
+// Set by the Notion sync's server-side Drive-sharing check (see
+// server/notion-sync.mjs) — never computed in the browser, because a
+// broken/sign-in-walled iframe is cross-origin and can't report its own
+// failure back to JS. null/undefined = no video, or a non-Drive host we
+// don't actively probe (YouTube/Loom/Vimeo) and simply trust.
+export type GuideVideoStatus = 'ok' | 'unreachable';
 
 export interface Product {
   slug: string;
@@ -24,6 +30,7 @@ export interface Guide {
   minutes: number;
   contentType: GuideContentType;
   videoUrl?: string | null;
+  videoStatus?: GuideVideoStatus | null;
   content?: string; // populated on the detail fetch only
   contentFormat?: 'html' | 'md';
 }
@@ -46,8 +53,6 @@ export type ThemeMode = 'light' | 'dark';
 
 // Global State
 export interface AppState {
-  sidebarOpen: boolean;
-  toggleSidebar: () => void;
   mobileMenuOpen: boolean;
   toggleMobileMenu: () => void;
   searchOpen: boolean;

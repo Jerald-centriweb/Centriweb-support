@@ -13,7 +13,7 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
     {
       id: 'init',
       role: 'assistant',
-      content: 'Hello! I am the CentriWeb AI Assistant. I can help you find guides, explain features, or troubleshoot issues. What can I do for you today?',
+      content: 'Hello, I am the PreBuild Assistant. I can help you find guides, explain features, or troubleshoot issues. What can I do for you today?',
       timestamp: Date.now()
     }
   ]);
@@ -114,10 +114,10 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
 
             <div className="flex flex-col gap-2">
               <div className={cn(
-                "p-4 rounded-2xl shadow-sm leading-relaxed text-sm",
+                "px-4 py-3 rounded-2xl shadow-sm leading-relaxed text-sm",
                 msg.role === 'assistant'
-                  ? "bg-slate-100 dark:bg-dark-card border border-slate-200 dark:border-dark-border text-slate-800 dark:text-slate-200 rounded-tl-none"
-                  : "bg-centri-600 text-white rounded-tr-none"
+                  ? "bg-slate-100 dark:bg-dark-card border border-slate-200 dark:border-dark-border text-slate-800 dark:text-slate-200 rounded-tl-md"
+                  : "bg-centri-600 text-white rounded-tr-md"
               )}>
                 {msg.content}
               </div>
@@ -129,7 +129,7 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
                     <button
                       key={idx}
                       onClick={() => handleAction(action)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-centri-900/30 border border-centri-700/30 text-centri-300 text-xs hover:bg-centri-900/50 transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-centri-50 dark:bg-centri-900/30 border border-centri-200 dark:border-centri-700/30 text-centri-700 dark:text-centri-300 text-xs font-medium hover:bg-centri-100 dark:hover:bg-centri-900/50 hover:-translate-y-0.5 transition-all"
                     >
                       <Sparkles size={12} />
                       {action.label}
@@ -170,8 +170,8 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Ask about pipelines, workflows, or account setup..."
-            className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 pr-24 text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-centri-500 focus:ring-1 focus:ring-centri-500 transition-all shadow-inner"
+            placeholder="Ask about your quotes, jobs, or account setup..."
+            className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 pr-24 text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-centri-500 focus:ring-2 focus:ring-centri-500/40 transition-all shadow-sm"
           />
 
           {/* Voice Input Button (Feature Gated) */}
@@ -179,7 +179,7 @@ export const ChatInterface: React.FC<{ className?: string }> = ({ className }) =
             <VoiceInput
               onTranscript={handleVoiceTranscript}
               onError={handleVoiceError}
-              className="absolute right-12 top-1.5 bottom-1.5"
+              className="absolute right-12 top-1.5 bottom-1.5 aspect-square"
             />
           )}
 

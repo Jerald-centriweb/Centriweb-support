@@ -169,11 +169,11 @@ export const CommandMenu: React.FC = () => {
                           onClick={action.action}
                           className={cn(
                             'w-full flex items-center gap-4 p-3 rounded-lg group transition-colors text-left',
-                            adjustedIdx === selectedIndex ? 'bg-purple-100 dark:bg-purple-900/30' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                            adjustedIdx === selectedIndex ? 'bg-centri-100 dark:bg-centri-900/30' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
                           )}
                         >
-                          <div className="flex-shrink-0 p-2 bg-slate-100 dark:bg-slate-800 rounded-md group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50">
-                            <action.icon className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+                          <div className="flex-shrink-0 p-2 bg-slate-100 dark:bg-slate-800 rounded-md group-hover:bg-centri-100 dark:group-hover:bg-centri-900/50">
+                            <action.icon className="w-5 h-5 text-centri-600 dark:text-centri-400" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200">{action.label}</h4>

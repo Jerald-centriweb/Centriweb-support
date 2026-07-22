@@ -11,14 +11,28 @@
 //
 // Usage:
 //   node server/provision-account.mjs \
-//     --slug=h-and-l-co \
-//     --company="H&L Co Builders" \
+//     --slug=acme-builders \
+//     --company="Acme Builders Pty Ltd" \
 //     --location=<GHL location id> \
-//     [--clickup-list="House & Land co"] \
+//     [--clickup-list="Acme Builders"] \
 //     [--rotate]   # bump token_version to invalidate any previously issued link
 import fs from 'fs';
 import pg from 'pg';
-import { signEmbedToken } from './auth.js';
+
+// auth.js reads JWT_SECRET at module load. The server process gets it from
+// `node --env-file=server/.env` (see ecosystem.config.cjs), but this script is
+// run by hand from the shell, where that flag is absent — so the secret must be
+// loaded into the environment BEFORE auth.js is imported, or signing throws
+// "secretOrPrivateKey must have a value". Hence the dynamic import below.
+function loadServerEnv() {
+  const envPath = new URL('./.env', import.meta.url);
+  for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+    const m = line.match(/^([A-Z_]+)=(.*)$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
+  }
+}
+loadServerEnv();
+const { signEmbedToken } = await import('./auth.js');
 
 // Provisioning writes to `accounts` (create/update a client), which the
 // RLS-restricted runtime role `portal_app` is deliberately NOT allowed to do

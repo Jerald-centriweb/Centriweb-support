@@ -16,7 +16,7 @@ const pageVariants = {
     y: 0,
     transition: {
       duration: 0.4,
-      ease: [0.22, 1, 0.36, 1], // Custom easing for smooth feel
+      ease: [0.22, 1, 0.36, 1] as const, // Custom easing for smooth feel
     },
   },
   exit: {
@@ -24,7 +24,7 @@ const pageVariants = {
     y: -20,
     transition: {
       duration: 0.3,
-      ease: [0.22, 1, 0.36, 1],
+      ease: [0.22, 1, 0.36, 1] as const,
     },
   },
 };

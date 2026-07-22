@@ -18,7 +18,7 @@ interface ShortcutGroup {
 export const KeyboardShortcuts: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
-  const { toggleSidebar, setSearchOpen, toggleTheme } = useStore();
+  const { setSearchOpen, toggleTheme } = useStore();
 
   const shortcutGroups: ShortcutGroup[] = [
     {
@@ -36,7 +36,6 @@ export const KeyboardShortcuts: React.FC = () => {
         { keys: ['/'], description: 'Focus search', action: () => setSearchOpen(true) },
         { keys: ['⌘', 'K'], description: 'Command palette', action: () => setSearchOpen(true) },
         { keys: ['T'], description: 'Toggle theme', action: toggleTheme },
-        { keys: ['B'], description: 'Toggle sidebar', action: toggleSidebar },
         { keys: ['?'], description: 'Show shortcuts', action: () => setIsOpen(true) },
       ],
     },
@@ -88,9 +87,6 @@ export const KeyboardShortcuts: React.FC = () => {
         } else if (e.key.toLowerCase() === 't') {
           e.preventDefault();
           toggleTheme();
-        } else if (e.key.toLowerCase() === 'b') {
-          e.preventDefault();
-          toggleSidebar();
         }
       }
 
@@ -103,7 +99,7 @@ export const KeyboardShortcuts: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, navigate, setSearchOpen, toggleTheme, toggleSidebar]);
+  }, [isOpen, navigate, setSearchOpen, toggleTheme]);
 
   const isInputFocused = () => {
     const active = document.activeElement;
@@ -121,7 +117,7 @@ export const KeyboardShortcuts: React.FC = () => {
             className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-centri-500 to-purple-600 text-white">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-centri-600 to-centri-700 text-white">
               <div className="flex items-center gap-3">
                 <Keyboard className="w-6 h-6" />
                 <h2 className="text-xl font-bold">Keyboard Shortcuts</h2>

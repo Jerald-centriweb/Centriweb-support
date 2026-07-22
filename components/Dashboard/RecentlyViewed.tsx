@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, ArrowRight, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useStore } from '../../store/useStore';
 import { useContent } from '../../hooks/useContent';
 import { SpotlightCard } from '../ui/SpotlightCard';
+import { Skeleton } from '../ui/Skeleton';
 
 const SECTION_LABELS: Record<string, string> = {
   start_here: 'Start here',
@@ -11,11 +13,32 @@ const SECTION_LABELS: Record<string, string> = {
   troubleshooting: 'Troubleshooting',
 };
 
+const gridContainer = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+const gridItem = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as const } },
+};
+
 export const RecentlyViewed: React.FC = () => {
   const { viewedGuides } = useStore();
   const { guides, isLoading } = useContent();
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return (
+      <div className="mb-12">
+        <Skeleton className="h-4 w-32 mb-4 ml-1" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-slate-200 dark:border-white/5 p-5 space-y-3">
+              <Skeleton className="h-4 w-20 rounded" />
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-3 w-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const history = viewedGuides.map((id) => guides.find((g) => g.id === id)).filter(Boolean) as typeof guides;
 
@@ -33,26 +56,28 @@ export const RecentlyViewed: React.FC = () => {
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <motion.div variants={gridContainer} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {display.map((guide) => (
-          <SpotlightCard key={guide.id} className="group h-full">
-            <Link to={`/guides/${guide.section}/${guide.id}`} className="block p-5 h-full flex flex-col">
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-[10px] font-bold text-centri-600 dark:text-centri-400 uppercase tracking-widest bg-centri-50 dark:bg-centri-900/20 px-2 py-1 rounded">
-                  {SECTION_LABELS[guide.section] || guide.section}
-                </span>
-                <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-centri-500 group-hover:-rotate-45 transition-all" />
-              </div>
-              <h4 className="font-semibold text-slate-900 dark:text-white line-clamp-1 group-hover:text-centri-600 dark:group-hover:text-centri-400 transition-colors mb-1">
-                {guide.title}
-              </h4>
-              {guide.summary && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-auto line-clamp-2 font-light">{guide.summary}</p>
-              )}
-            </Link>
-          </SpotlightCard>
+          <motion.div key={guide.id} variants={gridItem}>
+            <SpotlightCard className="group h-full hover:-translate-y-0.5 hover:shadow-lg hover:border-centri-300 dark:hover:border-centri-700/50">
+              <Link to={`/guides/${guide.section}/${guide.id}`} className="block p-5 h-full flex flex-col">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-[10px] font-bold text-centri-600 dark:text-centri-400 uppercase tracking-widest bg-centri-50 dark:bg-centri-900/20 px-2 py-1 rounded">
+                    {SECTION_LABELS[guide.section] || guide.section}
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-centri-500 group-hover:-rotate-45 transition-all" />
+                </div>
+                <h4 className="font-semibold text-slate-900 dark:text-white line-clamp-1 group-hover:text-centri-600 dark:group-hover:text-centri-400 transition-colors mb-1">
+                  {guide.title}
+                </h4>
+                {guide.summary && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-auto line-clamp-2 font-light">{guide.summary}</p>
+                )}
+              </Link>
+            </SpotlightCard>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 };

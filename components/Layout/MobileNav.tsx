@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, BookOpen, Video, Wrench, MessageSquare, LifeBuoy, X, Search, ChevronRight } from 'lucide-react';
+import { Home, Rocket, BookOpen, Receipt, Video, Wrench, MessageSquare, LifeBuoy, X, Search, ChevronRight } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { cn } from '../../lib/utils';
 
@@ -15,10 +15,11 @@ const itemVariants = {
   open: { opacity: 1, x: 0 },
 };
 
-const MobileNavItem = ({ to, icon: Icon, label, description, onClick }: any) => (
+const MobileNavItem = ({ to, icon: Icon, label, description, onClick, end }: any) => (
   <motion.div variants={itemVariants}>
     <NavLink
       to={to}
+      end={end}
       onClick={onClick}
       className={({ isActive }) =>
         cn(
@@ -53,7 +54,11 @@ export const MobileNav: React.FC = () => {
         >
           <div className="h-16 flex items-center justify-between px-6 border-b border-white/5">
             <span className="font-bold text-lg text-white tracking-tight">Menu</span>
-            <button onClick={toggleMobileMenu} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 text-white">
+            <button
+              onClick={toggleMobileMenu}
+              aria-label="Close menu"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 text-white"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -73,9 +78,14 @@ export const MobileNav: React.FC = () => {
               </motion.button>
 
               <div className="space-y-3">
+                <MobileNavItem to="/" end icon={Home} label="Home" description="Your dashboard" onClick={toggleMobileMenu} />
+              </div>
+
+              <div className="space-y-3">
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Onboarding path</div>
                 <MobileNavItem to="/guides/start_here" icon={Rocket} label="Start here" description="First week setup" onClick={toggleMobileMenu} />
                 <MobileNavItem to="/guides/day_to_day" icon={BookOpen} label="Day-to-day guides" description="Running your pipeline" onClick={toggleMobileMenu} />
+                <MobileNavItem to="/guides/money_and_documents" icon={Receipt} label="Money and documents" description="Invoices, payments, signing" onClick={toggleMobileMenu} />
                 <MobileNavItem to="/guides/videos" icon={Video} label="Videos" description="Watch instead of read" onClick={toggleMobileMenu} />
                 <MobileNavItem to="/guides/troubleshooting" icon={Wrench} label="Troubleshooting" description="Fix common problems" onClick={toggleMobileMenu} />
               </div>

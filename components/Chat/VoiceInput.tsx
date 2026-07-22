@@ -166,31 +166,36 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
   };
 
   if (!isSupported) {
+    // className carries this component's absolute positioning (see
+    // ChatInterface.tsx, which places it inside its own relatively-positioned
+    // input row alongside the send button). It has to land on THIS root
+    // element, not the inner button below — putting it on the button instead
+    // left the button positioned relative to its own unstyled wrapper div
+    // rather than the input row, which is what made it float off past the
+    // input's bottom edge instead of sitting centered beside the send button.
     return (
-      <button
-        disabled
-        className={cn(
-          'p-2 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed',
-          className
-        )}
-        title="Voice input not supported in this browser. Try Chrome or Edge."
-      >
-        <MicOff className="w-5 h-5" />
-      </button>
+      <div className={cn('relative', className)}>
+        <button
+          disabled
+          className="w-full h-full flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
+          title="Voice input not supported in this browser. Try Chrome or Edge."
+        >
+          <MicOff className="w-5 h-5" />
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="relative">
+    <div className={cn('relative', className)}>
       <button
         onClick={toggleListening}
         className={cn(
-          'p-2 rounded-lg transition-all relative',
+          'w-full h-full flex items-center justify-center rounded-lg transition-all',
           isListening
             ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
             : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300',
-          isProcessing && 'opacity-50 cursor-not-allowed',
-          className
+          isProcessing && 'opacity-50 cursor-not-allowed'
         )}
         disabled={isProcessing}
         title={isListening ? 'Stop recording' : 'Start voice input'}
