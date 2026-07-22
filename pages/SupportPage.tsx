@@ -5,7 +5,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { LifeBuoy, FileText, Zap, CheckCircle2, MessageSquare, Clock, AlertCircle, Inbox } from 'lucide-react';
 import { PageTransition } from '../components/ui/PageTransition';
 import { analytics } from '../lib/analytics';
-import { apiFetch } from '../services/authService';
+import { apiFetch, getToken } from '../services/authService';
 
 /**
  * Real ticket submission — POSTs to /api/tickets, which persists the ticket
@@ -115,7 +115,17 @@ export const SupportPage = () => {
   const [ticketsLoading, setTicketsLoading] = useState(true);
   const [ticketsError, setTicketsError] = useState<string | null>(null);
 
+  // Guides are public, but tickets are account-scoped and stay behind
+  // requireAuth server-side. Someone who opened the portal directly rather
+  // than through the Help link in their dashboard has no account to file
+  // against, so say so plainly instead of showing a form that would 401.
+  const signedOut = !getToken();
+
   const loadTickets = useCallback(async () => {
+    if (signedOut) {
+      setTicketsLoading(false);
+      return;
+    }
     try {
       const res = await apiFetch('/api/tickets');
       if (!res.ok) throw new Error(`status ${res.status}`);
@@ -127,7 +137,7 @@ export const SupportPage = () => {
     } finally {
       setTicketsLoading(false);
     }
-  }, []);
+  }, [signedOut]);
 
   useEffect(() => {
     analytics.trackPageView('support', 'Submit Ticket');
@@ -199,6 +209,15 @@ export const SupportPage = () => {
                     We've logged your ticket and let our team know. You'll hear back within our usual response time.
                   </p>
                   <Button onClick={() => { setSubmitted(false); setSubject(''); setBody(''); }}>Submit another ticket</Button>
+                </div>
+              ) : signedOut ? (
+                <div className="text-center py-10 space-y-3">
+                  <LifeBuoy className="w-10 h-10 text-slate-400 dark:text-slate-500 mx-auto" />
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Open the Help link in your dashboard to raise a ticket</h3>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm max-w-sm mx-auto leading-relaxed">
+                    Every guide here is yours to read. Tickets are tied to your account, so we need to know
+                    who you are before you send one — the Help link inside your dashboard does that for you.
+                  </p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">

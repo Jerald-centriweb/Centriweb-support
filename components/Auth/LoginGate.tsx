@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { captureEmbedTokenFromUrl, getToken, internalLogin, apiFetch, clearToken } from '../../services/authService';
-import { Hexagon } from 'lucide-react';
 
 /**
- * Establishes identity before rendering the portal. There are exactly two
- * paths in, and only one of them is ever shown to a client:
+ * Establishes identity where identity is available, but never blocks on it.
  *
  *  - EMBED (the client path): captures ?token=... from the URL (baked into
  *    the GHL custom menu link at onboarding), verifies it against
@@ -13,10 +11,22 @@ import { Hexagon } from 'lucide-react';
  *  - INTERNAL (#/internal-login, Jerald/us only): a small, clearly separate
  *    admin sign-in so we can preview the portal without an embed link. It is
  *    never linked from anywhere in the client-facing navigation.
+ *  - ANONYMOUS: the portal renders anyway.
  *
- * If neither identity is present, clients see a plain "open this from your
- * dashboard" message — never a login form. That is the point: there is
- * nothing here for a client to sign up for or manage.
+ * Anonymous used to hit a hard "open this from your dashboard" stop. That gate
+ * is gone: the guide content is the same for every client today, and
+ * /api/guides, /api/guides/:slug and /api/products are all unauthenticated in
+ * server/index.js already, so browsing needs no identity at all. Blocking on
+ * it only meant a link shared outside GHL looked broken.
+ *
+ * Identity still matters for the ACCOUNT-SCOPED surfaces — tickets and chat —
+ * which stay behind requireAuth server-side and are RLS-scoped per account.
+ * Those surfaces check getToken() and explain themselves rather than failing;
+ * nothing here weakens what the server enforces.
+ *
+ * When the client base grows and guides need to differ per client, this is
+ * where that decision goes back in — but as content filtering driven by the
+ * embed token, not as a wall in front of the whole portal.
  */
 export const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [checking, setChecking] = useState(true);
@@ -113,18 +123,7 @@ export const LoginGate: React.FC<{ children: React.ReactNode }> = ({ children })
     );
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-dark-bg px-4">
-      <div className="w-full max-w-md text-center space-y-4">
-        <div className="mx-auto w-14 h-14 rounded-2xl bg-centri-600/10 border border-centri-600/20 flex items-center justify-center">
-          <Hexagon className="w-7 h-7 text-centri-500" />
-        </div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Open this from your dashboard</h1>
-        <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-          This help centre opens from the Help link inside your own dashboard, so it already knows your account.
-          If you have arrived here directly, go back and use that link instead.
-        </p>
-      </div>
-    </div>
-  );
+  // No identity: render the portal anyway. Guides are public; the
+  // account-scoped surfaces handle their own signed-out state.
+  return <>{children}</>;
 };
