@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import { Guide } from '../../types';
 import { Clock, ThumbsUp, ThumbsDown, ArrowRight, CheckCircle, PlayCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -99,7 +100,13 @@ export const GuideViewer: React.FC<{ guide: Guide; guidesInSection: Guide[] }> =
         {guide.content && (
           <div ref={contentRef} className="guide-content mb-12">
             {guide.contentFormat === 'md' ? (
-              <ReactMarkdown>{guide.content}</ReactMarkdown>
+              // rehype-raw so the <details>/<summary> accordions and
+              // colour-classed callouts that server/notion-sync.mjs emits
+              // render as real elements rather than escaped text. Guide
+              // content is first-party (Jerald's own Notion), and the sibling
+              // branch below already renders stored HTML directly, so this
+              // introduces no new trust boundary.
+              <ReactMarkdown rehypePlugins={[rehypeRaw]}>{guide.content}</ReactMarkdown>
             ) : (
               <div dangerouslySetInnerHTML={{ __html: guide.content }} />
             )}

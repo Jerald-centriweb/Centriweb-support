@@ -251,6 +251,15 @@ function getProp(page, name) {
   }
 }
 
+// Notion block colours arrive as "blue_background", "yellow_background",
+// "default", etc. Reduce to a bare hue ("blue", "yellow", "default") for use
+// as a CSS class suffix; background and text variants of a colour mean the
+// same thing to us.
+function colorSlug(color) {
+  const c = String(color || 'default').replace(/_background$/, '');
+  return /^[a-z]+$/.test(c) ? c : 'default';
+}
+
 function slugify(title) {
   const s = String(title || '')
     .toLowerCase()
@@ -409,13 +418,20 @@ async function tableToMd(block) {
   return lines.join('\n') + '\n\n';
 }
 
-async function blocksToMarkdown(blocks, pageId, ctx) {
+// Exported for testing: the toggle/callout rendering below is the whole reason
+// the walkthrough content is readable, and it is worth being able to exercise
+// it against a synthetic block tree without a live Notion API key.
+export async function blocksToMarkdown(blocks, pageId, ctx) {
   let md = '';
   let numberedIndex = 0;
   for (const block of blocks) {
     const type = block.type;
     if (type !== 'numbered_list_item') numberedIndex = 0;
     const b = block[type] || {};
+    // Set by any case that renders its own children (currently `toggle`, which
+    // must nest them INSIDE its <details>), so the generic child-recursion at
+    // the bottom of the loop doesn't emit them a second time.
+    let childrenHandled = false;
 
     // Body-embedded video detection (only ever used as a fallback when the
     // Notion "Video" property is empty — see runSync). First match in
@@ -458,9 +474,33 @@ async function blocksToMarkdown(blocks, pageId, ctx) {
       case 'quote':
         md += `> ${richTextToMd(b.rich_text)}\n\n`;
         break;
-      case 'callout':
-        md += `> ${b.icon?.emoji ? b.icon.emoji + ' ' : ''}${richTextToMd(b.rich_text)}\n\n`;
+      // Callouts carry meaning through COLOUR in the walkthrough content —
+      // blue explains, yellow warns, gray describes a screenshot that hasn't
+      // been taken yet. Rendering them all as one undifferentiated blockquote
+      // (the previous behaviour) threw that distinction away, so emit a
+      // colour-classed div and let public/guide-content.css style it.
+      case 'callout': {
+        const icon = b.icon?.emoji ? `${b.icon.emoji} ` : '';
+        md += `<div class="cw-callout cw-callout--${colorSlug(b.color)}">\n\n${icon}${richTextToMd(b.rich_text)}\n\n</div>\n\n`;
         break;
+      }
+      // Toggles are the backbone of the walkthrough guides — each GHL section
+      // page is 8-ish top-level toggles, most holding another 9 nested inside.
+      // There was no case for them here, so they fell through to `default`:
+      // the summary text survived as a bare paragraph and every child was
+      // flattened inline after it, collapsing the whole accordion into one
+      // undifferentiated wall of prose. Render real <details> instead, with
+      // children nested INSIDE (hence childrenHandled).
+      case 'toggle': {
+        const summary = richTextToMd(b.rich_text);
+        let inner = '';
+        if (block.has_children) {
+          inner = await blocksToMarkdown(await fetchBlockChildren(block.id), pageId, ctx);
+        }
+        md += `<details class="cw-toggle cw-toggle--${colorSlug(b.color)}">\n<summary>${summary}</summary>\n\n${inner}\n</details>\n\n`;
+        childrenHandled = true;
+        break;
+      }
       case 'divider':
         md += `---\n\n`;
         break;
@@ -490,7 +530,7 @@ async function blocksToMarkdown(blocks, pageId, ctx) {
     }
     // one level of nested children for block types that commonly carry them
     // (toggle, quote, callout) — skip table/table_row, already handled above.
-    if (block.has_children && type !== 'table' && type !== 'table_row') {
+    if (block.has_children && !childrenHandled && type !== 'table' && type !== 'table_row') {
       const children = await fetchBlockChildren(block.id);
       md += await blocksToMarkdown(children, pageId, ctx);
     }
@@ -616,11 +656,21 @@ export async function runSync({ dryRun = false, snapshotPages = null } = {}) {
   try {
     const prepared = [];
     for (const page of pages) {
-      const title = getProp(page, 'Title') || '(untitled)';
+      // The walkthrough database ("Desktop App", inline in the "Pre build
+      // Account Walkthrough" page) titles its rows `Name`, not `Title`.
+      const title = getProp(page, 'Title') || getProp(page, 'Name') || '(untitled)';
       const product = getProp(page, 'Product') || 'PreBuild';
       const category = getProp(page, 'Category') || 'Day to day';
       const order = getProp(page, 'Order') ?? 0;
-      const notionStatus = getProp(page, 'Status') || 'Draft';
+      // That database deliberately carries only Name + Order — there is no
+      // Status property at all. An ABSENT Status therefore means "this row
+      // exists in the database, so it is live"; defaulting to Draft here
+      // would import every guide and then hide all of them behind the
+      // status='live' filter in /api/guides, which looks exactly like the
+      // sync silently doing nothing. A Status property, where one is present,
+      // still governs as before.
+      const rawStatus = getProp(page, 'Status');
+      const notionStatus = rawStatus === undefined ? 'Published' : rawStatus;
       const verified = getProp(page, 'Verified') || false;
       const lastEdited = page.last_edited_time;
       const isArchived = !!page.archived || !!page.in_trash;

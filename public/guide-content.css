@@ -131,3 +131,108 @@
   margin: 14px 0 4px; display: block;
 }
 .guide-content img + em, .guide-content figcaption { display: block; font-size: 13.5px; color: var(--gc-soft); font-style: normal; margin: 6px 0 18px; }
+
+/* ---------------------------------------------------------------------------
+ * Notion-synced guides (server/notion-sync.mjs).
+ *
+ * The walkthrough content is built almost entirely from toggles and
+ * colour-coded callouts, and the colour carries meaning: blue explains what a
+ * thing is, yellow warns, gray describes the screenshot that belongs there.
+ * Flattening those to one blockquote style lost the distinction, so the sync
+ * emits .cw-callout/.cw-toggle with a hue suffix and they are styled here.
+ * Hues follow Notion's own palette; anything unrecognised lands on --default.
+ * ------------------------------------------------------------------------- */
+.guide-content .cw-callout {
+  --cw-hue: var(--gc-line2);
+  --cw-wash: var(--gc-card);
+  border-left: 3px solid var(--cw-hue);
+  background: var(--cw-wash);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  margin: 0 0 16px;
+  max-width: 68ch;
+}
+.guide-content .cw-callout > :last-child { margin-bottom: 0; }
+.guide-content .cw-callout p { max-width: none; }
+
+.guide-content .cw-callout--blue   { --cw-hue: var(--gc-blue);  --cw-wash: var(--gc-blue-wash); }
+.guide-content .cw-callout--green  { --cw-hue: var(--gc-ok);    --cw-wash: var(--gc-ok-wash); }
+.guide-content .cw-callout--yellow { --cw-hue: #d9a020;         --cw-wash: #fdf6e6; }
+.guide-content .cw-callout--orange { --cw-hue: #d97a2b;         --cw-wash: #fdf0e6; }
+.guide-content .cw-callout--red    { --cw-hue: #d1495b;         --cw-wash: #fceaec; }
+.guide-content .cw-callout--purple { --cw-hue: #8b6bd9;         --cw-wash: #f2eefc; }
+.guide-content .cw-callout--pink   { --cw-hue: #cc5f9e;         --cw-wash: #fceef6; }
+.guide-content .cw-callout--brown  { --cw-hue: #9c7a5c;         --cw-wash: #f7f1ea; }
+.guide-content .cw-callout--gray   { --cw-hue: var(--gc-soft);  --cw-wash: var(--gc-paper); }
+
+.dark .guide-content .cw-callout--yellow { --cw-hue: #e0b04a; --cw-wash: #2b2413; }
+.dark .guide-content .cw-callout--orange { --cw-hue: #e89b57; --cw-wash: #2b1e13; }
+.dark .guide-content .cw-callout--red    { --cw-hue: #e5697a; --cw-wash: #2b1519; }
+.dark .guide-content .cw-callout--purple { --cw-hue: #a68ce8; --cw-wash: #211a33; }
+.dark .guide-content .cw-callout--pink   { --cw-hue: #e07fb8; --cw-wash: #2d1826; }
+.dark .guide-content .cw-callout--brown  { --cw-hue: #b8977a; --cw-wash: #241d16; }
+
+/* A gray callout in this content is a placeholder describing a screenshot
+ * that hasn't been taken yet. Mark it as caption-ish rather than as advice,
+ * so it doesn't read like instruction until a real image replaces it. */
+.guide-content .cw-callout--gray {
+  font-size: 15px;
+  color: var(--gc-mut);
+  font-style: italic;
+}
+
+.guide-content .cw-toggle {
+  border: 1px solid var(--gc-line);
+  border-radius: 10px;
+  background: var(--gc-card);
+  margin: 0 0 12px;
+  max-width: 68ch;
+  overflow: hidden;
+}
+.guide-content .cw-toggle > summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: var(--gc-ink);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.15s ease;
+}
+.guide-content .cw-toggle > summary::-webkit-details-marker { display: none; }
+.guide-content .cw-toggle > summary::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--gc-soft);
+  border-bottom: 2px solid var(--gc-soft);
+  transform: rotate(-45deg);
+  transition: transform 0.18s ease;
+}
+.guide-content .cw-toggle[open] > summary::before { transform: rotate(45deg); }
+.guide-content .cw-toggle > summary:hover { background: var(--gc-blue-wash); }
+.guide-content .cw-toggle[open] > summary { border-bottom: 1px solid var(--gc-line); }
+.guide-content .cw-toggle > :not(summary) { padding: 0 16px; }
+.guide-content .cw-toggle > summary + * { padding-top: 14px; }
+.guide-content .cw-toggle > :last-child:not(summary) { padding-bottom: 14px; }
+
+/* Nested toggles sit inside an already-bordered parent — drop to a lighter
+ * rule so two levels of accordion don't read as two stacked cards. */
+.guide-content .cw-toggle .cw-toggle {
+  border: 0;
+  border-top: 1px solid var(--gc-line);
+  border-radius: 0;
+  margin: 0;
+  background: transparent;
+}
+.guide-content .cw-toggle .cw-toggle > summary { font-weight: 500; font-size: 15.5px; }
+
+.guide-content .cw-toggle--blue   > summary { box-shadow: inset 3px 0 0 var(--gc-blue); }
+.guide-content .cw-toggle--green  > summary { box-shadow: inset 3px 0 0 var(--gc-ok); }
+.guide-content .cw-toggle--yellow > summary { box-shadow: inset 3px 0 0 #d9a020; }
+.guide-content .cw-toggle--orange > summary { box-shadow: inset 3px 0 0 #d97a2b; }
+.guide-content .cw-toggle--purple > summary { box-shadow: inset 3px 0 0 #8b6bd9; }
+.guide-content .cw-toggle--red    > summary { box-shadow: inset 3px 0 0 #d1495b; }
+.guide-content .cw-toggle--pink   > summary { box-shadow: inset 3px 0 0 #cc5f9e; }
