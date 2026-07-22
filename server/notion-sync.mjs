@@ -302,6 +302,31 @@ function richTextToMd(rt) {
     .join('');
 }
 
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Inline HTML sibling of richTextToMd, for the few places where the output
+// lands INSIDE a raw HTML element rather than in markdown flow — currently
+// <summary>. Markdown is not parsed inside raw HTML, so emitting `**Bold**`
+// there rendered literal asterisks to the reader. Go straight from Notion's
+// annotations to HTML instead of post-processing markdown with a regex.
+function richTextToInlineHtml(rt) {
+  if (!rt || !rt.length) return '';
+  return rt
+    .map((t) => {
+      let s = escapeHtml(t.plain_text || '');
+      const ann = t.annotations || {};
+      if (ann.code) s = `<code>${s}</code>`;
+      if (ann.bold) s = `<strong>${s}</strong>`;
+      if (ann.italic) s = `<em>${s}</em>`;
+      if (ann.strikethrough) s = `<s>${s}</s>`;
+      if (t.href) s = `<a href="${escapeHtml(t.href)}">${s}</a>`;
+      return s;
+    })
+    .join('');
+}
+
 // ---------------------------------------------------------------------------
 // Video resolution — Jerald authors SOPs in Notion, videos live on Google
 // Drive. He will not always use the "Video" property; a Drive/YouTube/Loom
@@ -393,7 +418,15 @@ function guessExt(url) {
 
 async function downloadImage(url, pageId, blockId) {
   const ext = guessExt(url);
-  const filename = `notion-${pageId.replace(/-/g, '').slice(0, 12)}-${blockId.replace(/-/g, '').slice(0, 8)}${ext}`;
+  // The block id must be used IN FULL. Notion ids created close together in
+  // one workspace share a long leading prefix, so the previous
+  // blockId.slice(0, 8) collapsed every image block on a page onto a single
+  // filename: each download overwrote the last, and every screenshot in a
+  // guide ended up pointing at whichever image happened to be fetched last.
+  // The Conversations guide, for instance, embedded 44 images that resolved
+  // to just 2 distinct files. A full block id is globally unique and stable,
+  // which also keeps re-syncs idempotent.
+  const filename = `notion-${pageId.replace(/-/g, '').slice(0, 8)}-${blockId.replace(/-/g, '')}${ext}`;
   const dest = path.join(SHOTS_DIR, filename);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`image download failed (${res.status}) for block ${blockId}`);
@@ -492,7 +525,9 @@ export async function blocksToMarkdown(blocks, pageId, ctx) {
       // undifferentiated wall of prose. Render real <details> instead, with
       // children nested INSIDE (hence childrenHandled).
       case 'toggle': {
-        const summary = richTextToMd(b.rich_text);
+        // Inline HTML, not markdown — this lands inside <summary>, where
+        // markdown is not parsed and `**Bold**` would show its asterisks.
+        const summary = richTextToInlineHtml(b.rich_text);
         let inner = '';
         if (block.has_children) {
           inner = await blocksToMarkdown(await fetchBlockChildren(block.id), pageId, ctx);
@@ -603,13 +638,32 @@ function computeHash(fields) {
 // first real paragraph of content rather than repeating the title verbatim.
 // Never applied to rows that already have a hand-written summary (the 10
 // ported guides keep theirs from server/migrate-content.mjs untouched).
+// Blocks that are structure rather than prose. Since callouts and toggles now
+// render as raw HTML, the first "paragraph" of a guide is usually the bare
+// opening tag `<div class="cw-callout cw-callout--blue">`, which this happily
+// returned as the guide's summary — every card on the Guides page showed a
+// div tag as its subtitle. Skip markup-only chunks and strip tags from the
+// rest, so the summary is the first real SENTENCE a reader would see.
+function isMarkupOnly(chunk) {
+  return !chunk.replace(/<[^>]*>/g, '').trim();
+}
+
 function deriveSummary(markdown, fallbackTitle) {
   const firstPara = (markdown || '')
     .split(/\n\s*\n/)
     .map((s) => s.trim())
-    .find((s) => s && !s.startsWith('#') && !s.startsWith('!['));
+    .find((s) => s && !s.startsWith('#') && !s.startsWith('![') && !s.startsWith('---') && !isMarkupOnly(s));
   if (!firstPara) return fallbackTitle;
-  const plain = firstPara.replace(/[*_`>#]/g, '').replace(/\s+/g, ' ').trim();
+  const plain = firstPara
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/[*_`>#]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!plain) return fallbackTitle;
   return plain.length > 180 ? `${plain.slice(0, 177)}...` : plain;
 }
 
@@ -676,7 +730,7 @@ export async function runSync({ dryRun = false, snapshotPages = null } = {}) {
       const isArchived = !!page.archived || !!page.in_trash;
 
       const { rows: existingRows } = await client.query(
-        'SELECT slug, notion_last_edited_time, status, video_url, video_status, video_status_reason FROM guides WHERE notion_page_id = $1',
+        'SELECT slug, summary, notion_last_edited_time, status, video_url, video_status, video_status_reason FROM guides WHERE notion_page_id = $1',
         [page.id]
       );
       const existing = existingRows[0];
@@ -808,7 +862,19 @@ export async function runSync({ dryRun = false, snapshotPages = null } = {}) {
 
         if (finalHash === priorHash && p.existing.status === p.targetStatus) {
           summary.unchanged += 1;
-          await client.query('UPDATE guides SET last_synced_at = now() WHERE notion_page_id = $1', [p.pageId]);
+          // Content is byte-identical, but the summary is DERIVED from it, so
+          // a fix to deriveSummary must still be able to reach a row whose
+          // Notion page never changes again. Recompute and write only on an
+          // actual difference, so the steady state is still a no-op.
+          const wantSummary = p.content ? deriveSummary(p.content, p.title) : null;
+          if (wantSummary && wantSummary !== p.existing.summary) {
+            await client.query(
+              'UPDATE guides SET summary = $2, last_synced_at = now() WHERE notion_page_id = $1',
+              [p.pageId, wantSummary]
+            );
+          } else {
+            await client.query('UPDATE guides SET last_synced_at = now() WHERE notion_page_id = $1', [p.pageId]);
+          }
           continue;
         }
 
@@ -852,6 +918,14 @@ export async function runSync({ dryRun = false, snapshotPages = null } = {}) {
         if (contentClause) {
           setClauses.push(`content = $${values.length + 1}`, `content_format = 'md'`);
           values.push(p.content);
+          // Re-derive the summary alongside the content it is drawn from.
+          // Previously summary was only ever set on INSERT, so a guide whose
+          // body changed in Notion kept a stale one-liner forever — and any
+          // guide inserted while deriveSummary had a bug kept the bad summary
+          // permanently, with no way to correct it short of deleting the row.
+          // Notion owns these rows; the summary should track them.
+          setClauses.push(`summary = $${values.length + 1}`);
+          values.push(deriveSummary(p.content, p.title));
         }
         await client.query(`UPDATE guides SET ${setClauses.join(', ')} WHERE notion_page_id = $1`, values);
         summary.updated += 1;

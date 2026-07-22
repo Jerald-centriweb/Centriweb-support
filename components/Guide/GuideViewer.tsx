@@ -40,6 +40,21 @@ export const GuideViewer: React.FC<{ guide: Guide; guidesInSection: Guide[] }> =
   const showVideo = hasWorkingVideo(guide);
   const embedUrl = showVideo ? toEmbedUrl(guide.videoUrl!) : null;
 
+  // Notion-synced guides have no separate summary field, so the sync derives
+  // one from the opening sentence of the body (see deriveSummary). On a list
+  // card that is exactly right; on the guide itself it meant the reader was
+  // shown the same sentence twice in a row — once truncated as the subtitle,
+  // then again in full in the first callout. Only show the subtitle when it
+  // is not just an echo of how the content already opens.
+  const showSummary = (() => {
+    if (!guide.summary) return false;
+    const norm = (s: string) =>
+      s.replace(/<[^>]*>/g, ' ').replace(/[*_`>#…]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const head = norm(guide.content || '').slice(0, 400);
+    const sum = norm(guide.summary).replace(/\.\.\.$/, '');
+    return !(sum.length > 24 && head.startsWith(sum.slice(0, Math.min(sum.length, 80))));
+  })();
+
   return (
     // justify-center matters here: TableOfContents renders nothing (not even
     // an empty node worth balancing) below the xl breakpoint, so without
@@ -62,7 +77,7 @@ export const GuideViewer: React.FC<{ guide: Guide; guidesInSection: Guide[] }> =
             )}
           </div>
           <h1 className="text-3xl sm:text-4xl font-semibold text-slate-900 dark:text-white mb-4 tracking-tight leading-[1.15]">{guide.title}</h1>
-          {guide.summary && <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">{guide.summary}</p>}
+          {showSummary && <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">{guide.summary}</p>}
 
           <div className="flex items-center gap-6 mt-6 text-sm text-slate-500 dark:text-slate-500 border-b border-slate-200 dark:border-slate-800 pb-8">
             {guide.minutes ? (
