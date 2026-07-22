@@ -29,3 +29,6 @@ dist-ssr
 !.env.example
 .secrets/
 server/.env
+
+# Local nightly DB dumps — client rows + password hashes, never commit
+backups/
