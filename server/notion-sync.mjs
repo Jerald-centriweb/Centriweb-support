@@ -260,6 +260,21 @@ function colorSlug(color) {
   return /^[a-z]+$/.test(c) ? c : 'default';
 }
 
+// Scaffolding rows that exist for Jerald's benefit while writing, not for a
+// client to read: "Conversations - Row 3" style placeholders, and "BREAK"
+// spacers used to divide the Notion list. Because the walkthrough database
+// has no Status property, every row in it is treated as published (see
+// rawStatus), so without this these show up in the portal as real guides.
+//
+// They are ARCHIVED rather than skipped, so they stay in the guides table and
+// come straight back if this rule is ever wrong or removed — consistent with
+// the rest of this file, which never hard-deletes anything.
+function isWorkingRow(title) {
+  const t = String(title || '').trim();
+  if (/^break$/i.test(t)) return true;
+  return /(^|[-–—:]\s*)row\s*\d+\s*$/i.test(t);
+}
+
 function slugify(title) {
   const s = String(title || '')
     .toLowerCase()
@@ -735,7 +750,8 @@ export async function runSync({ dryRun = false, snapshotPages = null } = {}) {
       );
       const existing = existingRows[0];
 
-      const targetStatus = isArchived ? 'archived' : notionStatus === 'Published' ? 'live' : 'draft';
+      const targetStatus =
+        isArchived || isWorkingRow(title) ? 'archived' : notionStatus === 'Published' ? 'live' : 'draft';
 
       // Cheap short-circuit: if Notion hasn't touched this page since our last
       // successful sync of it, skip re-rendering content and re-downloading
